@@ -1,0 +1,269 @@
+Under the risk-neutral pricing framework, the underlying asset price $S(t)$ evolves according to a 
+geometric Brownian motion, described by the stochastic differential equation:
+
+\begin{equation}\label{eq:gbm_rn}
+    dS(t) = r S(t) dt + \sigma S(t) dW_t
+\end{equation}
+
+where $W_t$ is a Weiner process, $r$ is the risk-free interest rate which is assumed to be constant, and $\sigma$ represents 
+the volatility of the asset. Notably, under the risk-neutral measure the expected return of the asset equals the risk-free rate $r$. 
+
+Given the payoff structure for Asian options described in equations \eqref{eq:asian_payoffs}, the Monte Carlo pricing methodology 
+proceeds as follows: 
+\begin{enumerate}\label{process:MC_algorithm}
+    \item We simulate multiple price trajectories for theunderlying asset using a discrete approximation of equation \eqref{eq:gbm_rn}
+    \item Evaluate the option payoff on each trajectory
+    \item Compute the arithmetic average of these payoffs
+    \item Discount this average back to time zero. 
+\end{enumerate}
+
+This process yields an unbiased estimate of the option's value \cite{hull2016options}. In practice, it is numerically more stable to 
+simulate the asset price $S(t)$ using the discrete approximation:
+
+\begin{equation}\label{eq:gbm_discrete}
+    S(t + \Delta t) = S(t) \exp\bigg[(r - \frac{\sigma^2}{2})\Delta t + \sigma \Delta W_t\bigg].
+\end{equation}
+
+which is derived from equation \eqref{eq:gbm_rn}. Simulating asset price paths according to \eqref{eq:gbm_discrete} 
+significantly reduces sensitivity to the choice of timestep size $\Delta t$ timestep size $\Delta t$ \cite{hull2016options}.
+
+Before directly applying this approach to arithmetic Asian options we first validate our Monte Carlo framework. 
+Specifically, we verify correctness by pricing European and geometric Asian options, for which closed-form analytic solutions exist.
+This allows us to both confirm that our Monte Carlo implementation is correctly set up and assess convergence properties and accuracy. 
+Moreover, during this validation stage, we introduce and examine one variance reduction technique designed to improve the efficiency and 
+precision of our Monte Carlo estimates. Following this validation phase, we transition to pricing arithmetic Asian options simply by
+modifying the payoff function. We then implement and analyse a second variance reduction technique.
+
+\subsubsection{Validating the Monte Carlo Method via European and Geometric Asian Options}\label{sec:pricing_eu_geo_asian_options}
+
+Figure \ref{fig:validating_MC_prices} compares Monte Carlo price estimates with analytic solutions. 
+Only call option prices are presented here, as put prices could be derived with equivalent accuracy 
+through put-call parity for both European and geometric Asian options. 
+The results confirm accurate convergence across a range of maturities and volatilities. 
+Although other parameters were also varied during validation to ensure consistency, we 
+illustrate price behavior specifically with respect to volatility and maturity here.   
+
+
+\begin{figure}[H]
+    \centering
+
+    \begin{subfigure}[b]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{graphics/validation_mc_european_call_vol.png}
+        \caption{European call prices for varying volatilities.}
+        \label{fig:eu_call_vol}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{graphics/validation_mc_european_call_T.png}
+        \caption{European call prices for varying maturities.}
+        \label{fig:eu_call_T}
+    \end{subfigure}
+
+    \vspace{0.5cm} % Optional vertical spacing
+
+    \begin{subfigure}[b]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{graphics/validation_mc_geometric_call_vol.png}
+        \caption{Geometric Asian call prices for varying volatilities.}
+        \label{fig:geometric_call_vol}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{graphics/validation_mc_geometric_call_T.png}
+        \caption{Geometric Asian call prices for varying maturities.}
+        \label{fig:geometric_call_T}
+    \end{subfigure}
+
+    \caption{Validation of Monte Carlo pricing by comparing Monte Carlo estimates to analytic 
+    solutions for European and geometric Asian call options. Prices are shown across varying 
+    volatilities and maturities. Base parameters are $S_0 = 90$, $K=100$, $\sigma = 15\%$, 
+    $r=4\%$, $T=1$ year, with 1000 Monte Carlo trials and timestep size 
+    $\Delta T = \frac{T}{1000}$. Error bars represent the 95\% confidence intervals.}
+    \label{fig:validating_MC_prices}
+\end{figure}
+
+
+Having validated our MC implementation, we now explore the effect of implementing
+antithetic variates to achieve variance reduction. The standard Monte Carlo estimator of an 
+expected payoff
+$\mathbb{E}^{\mathbb{Q}}[P(S_T)]$, 
+based on $M$ independent samples $S_{T,i}$ is given by:
+
+\begin{equation*}
+    \hat{\mu} = \frac{1}{M} \sum_{i=1}^{M}P(S_{T,i}).
+\end{equation*}
+
+This estimator has variance:
+
+\begin{equation*}
+    \mathrm{Var}[\hat{\mu}] = \frac{\sigma^2}{M}
+\end{equation*}
+where $\sigma^2 = \mathrm{Var}[P(S_{T})]$. The principle behind antithetic variates involves
+ generating $\frac{M}{2}$ pairs of samples $(S_{T,i}, S_{T,i}^{anti})$, where each pair is
+  constructed to exhibit negative correlation. The antithetic estimator is then defined as:
+
+\begin{equation}
+    \hat{\mu}_{anti} = \frac{1}{M/2} \sum_{i=1}^{M/2}\frac{P(S_{T,i}) + P(S_{T,i}^{anti})}{2}
+\end{equation}
+
+which is also unbiased. The variance of this estimator however is given by:
+
+\begin{equation}
+    \mathrm{Var}[\hat{\mu}_{anti}] = \frac{1}{M/2} \bigg[\frac{\mathrm{Var}[P(S_T)] + 
+    \mathrm{Var}[P(S_T^{anti})] + 2\mathrm{Cov}[P(S_T), P(S_T^{anti})]}{4}\bigg].
+\end{equation}
+
+Since the pairs are negatively correlated, we have:
+ $\mathrm{Cov}[P(S_T), P(S_T^{anti})] < 0$ and thus 
+ $\mathrm{Var}[\hat{\mu}_{anti}] \le \mathrm{Var}[\hat{\mu}]$ indicating improved convergence.
+In practice, negatively correlated samples are obtained by simulating half the underlying asset
+trajectories using Brownian increments that are negatives of the other half. Figures
+illustrate the resulting reduction in standard errors from employing antithetic variates.
+
+\begin{figure}[h]
+    \centering
+
+    % First subfigure
+    \begin{subfigure}[b]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{graphics/stderr_antithetic.png}
+        \caption{}
+        \label{fig:antithetic_vary_num_trials}
+    \end{subfigure}
+    \hfill
+    % Second subfigure
+    \begin{subfigure}[b]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{graphics/stderr_antithetic_with_n.png}
+        \caption{}
+        \label{fig:antithetic_vary_num_ts}
+    \end{subfigure}
+
+    \caption{Impact of using antithetic variates on Monte Carlo standard error for pricing, 
+    shown when varying (a) the number of simulation samples and (b) the number of timesteps per path.
+    Results were generated using the same base parameters as in Figure \ref{fig:validating_MC_prices} 
+    for a European call.}
+    \label{fig:std_errors_antithetic_compared}
+\end{figure}
+
+We observe a clear reduction in the standard error, 
+resulting in faster convergence of Monte Carlo estimates when employing antithetic variates. 
+Having validated the effectiveness of antithetic variates, we now proceed to implement this technique 
+in pricing arithmetic Asian options. Subsequently, we will explore an additional variance reduction 
+strategy, the control variate method, which we expect will further enhance the efficiency and accuracy 
+of our Monte Carlo pricing framework.
+
+\subsection{Pricing arithmetic Asian options}
+
+Obtaining prices for arithmetic Asian options is simply now a case of changing the payoff function 
+used to that described by equations \eqref{eq:asian_payoffs}. We now plot the obtained prices for 
+arithmetic Asian put and call options for varying varying strikes and volatilities alongside now
+validated prices for European and geometric Asian options. Results are shown in Figure 
+\ref{fig:asian_arith_prices}
+
+
+\begin{figure}[h]
+    \centering
+% Top left
+\begin{subfigure}[b]{0.45\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{graphics/arithmetic_call_prices_K.png}
+    \caption{Call option prices varying strike $K$.}
+    \label{fig:arith_call_k}
+\end{subfigure}
+\hfill
+% Top right
+\begin{subfigure}[b]{0.45\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{graphics/arithmetic_put_prices_K.png}
+    \caption{Put option prices varying strike $K$.}
+    \label{fig:arith_put_k}
+\end{subfigure}
+
+\vspace{0.5cm}
+
+% Bottom left
+\begin{subfigure}[b]{0.45\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{graphics/arithmetic_call_prices_sigma.png}
+    \caption{Call option prices varying volatility $\sigma$.}
+    \label{fig:arith_call_sigma}
+\end{subfigure}
+\hfill
+% Bottom right
+\begin{subfigure}[b]{0.45\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{graphics/arithmetic_put_prices_sigma.png}
+    \caption{Put option prices varying volatility $\sigma$.}
+    \label{fig:arith_put_sigma}
+\end{subfigure}
+
+\caption{Prices obtained via Monte Carlo simulation for arithmetic Asian, geometric Asian, and European calls and puts, varying strike $K$ and volatility $\sigma$. Base parameters: $S_0 = 150$, $K=100$, $\sigma =15\%$, $T=10$, $r=4\%$, number of simulations $M=2000$, and timestep $\Delta t = \frac{T}{1000}$.}
+\label{fig:asian_arith_prices}
+\end{figure}
+
+The results presented generally support the validity of our Monte Carlo approach. For call options, 
+Figures \ref{fig:arith_call_k} and \ref{fig:arith_call_sigma} clearly demonstrate that the 
+arithmetic Asian prices lie consistently between European and geometric Asian prices. Intuitively, 
+this ordering arises because averaging reduces volatility, making Asian options cheaper than European 
+options, while the geometric average provides a lower bound on the arithmetic average:
+\begin{equation*}
+\bar{S}_{\text{geometric}} \leq \bar{S}_{\text{arithmetic}}.
+\end{equation*}
+Consequently, for call payoffs, we have:
+\begin{equation*}
+\max(\bar{S}_{\text{geometric}} - K, 0) \leq \max(\bar{S}_{\text{arithmetic}} - K, 0).
+\end{equation*}
+By Jensen's inequality, since the payoff is a convex function, it follows that:
+\begin{equation*}
+\mathbb{E}[\max(\bar{S}_{\text{geometric}} - K, 0)] \leq \mathbb{E}[\max(\bar{S}_{\text{arithmetic}} - K, 0)].
+\end{equation*}
+
+This neatly explains why arithmetic Asian call prices consistently sit between European and 
+geometric Asian call prices in our results. Similarly, this logic indicates that the geometric Asian 
+put serves as an upper bound for the arithmetic Asian put, aligning with what is observed in Figures 
+\ref{fig:arith_put_k} and \ref{fig:arith_put_sigma}. Figure \ref{fig:arith_put_sigma} again illustrates
+that the European put option prices increase above both Asian put prices as volatility rises, consistent
+with the notion that greater volatility expands potential payoffs.
+
+Interestingly, in Figure \ref{fig:arith_put_k}, we observe that as the strike $K$ becomes large 
+(approximately $K=200$ and beyond), the European put price converges with and then drops below the 
+arithmetic and geometric Asian put prices. Intuitively, this could occur because, at very high strikes,
+the probability of the underlying asset finishing significantly below the strike increases dramatically
+for averaged payoffs compared to a single-terminal-price payoff. Hence, the Asian puts, which depend 
+on the average price, can maintain higher expected payoffs in these extreme strike scenarios. We 
+will investigate this intriguing behavior further in the section \ref{sec:comparison}, where we 
+compare our Monte Carlo results to finite difference prices to determine whether this phenomenon is 
+consistent across numerical methods.
+
+To further improve the efficiency of our Monte Carlo estimates for arithmetic Asian options, we
+now introduce the control variate technique. Control variates leverage the known analytical price 
+of a closely related option to reduce variance in Monte Carlo simulations, thereby achieving lower 
+standard errors.
+
+Formally, suppose we want to estimate the expected payoff $\mathbb{E}[P(S)]$ using Monte Carlo 
+simulation, and we have a related random variable $C(S)$ with a known expected value $\mathbb{E}[P(S)]$.
+Then, the control variate estimator $\hat{\mu}_{cv}$ is defined as:
+
+\begin{equation*}
+\hat{\mu}_{cv} = \frac{1}{M} \sum_{i=1}^{M}\left[P(S_i) - c\left(C(S_i)-\mathbb{E}[C(S)]\right)\right],
+\end{equation*}
+
+where $c$ is chosen to minimize the variance of $\hat{\mu}_{cv}$. The optimal $c$ is given by:
+
+\begin{equation*}
+    c^* = \frac{\mathrm{Cov}(P(S), C(S))}{\mathrm{Var}(C(S))}.
+\end{equation*}
+
+In the context of arithmetic Asian options, a natural and highly effective control variate is
+the geometric Asian option, since it admits a known closed-form analytic price. 
+By exploiting the strong correlation between the payoffs of arithmetic 
+and geometric Asian options, this choice significantly reduces the variance of our price estimates.
+This approach is inspired by that taken in \cite{kemna1990pricing}. We therefore implement 
+the above methodolog. The resulting effects on standard error are shown in figure:
+
+
+

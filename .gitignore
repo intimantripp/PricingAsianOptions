@@ -1,0 +1,77 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+options_venv/
+venv/
+.env/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Pytest cache
+.pytest_cache/
+
+# mypy cache
+.mypy_cache/
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Logs and databases
+*.log
+*.sqlite3
+*.db
+
+# Environment variables and secrets
+.env
+*.env
+
+# VS Code and PyCharm
+.vscode/
+.idea/
+
+# COMSOL-related files (if needed)
+*.mph
+*.mphbin
+*.mph.lock
+
+# LaTeX build files
+*.aux
+*.bbl
+*.blg
+*.brf
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.out
+*.toc
+*.nav
+*.snm
+*.vrb
+*.log
+*.dvi
+*.pdf
+
+# Temporary and swap files
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# MacOS files
+.DS_Store
+
+# Linux files
+*~ 

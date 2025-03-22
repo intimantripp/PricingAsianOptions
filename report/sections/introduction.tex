@@ -1,0 +1,20 @@
+Asian options are financial derivatives whose payoff depends on the average price of the underlying asset throughout the 
+lifetime of the option \cite{hull2016options}.
+The averaging can be based on either the geometric or arithmetic mean, although arithmetic
+Asian options arethe ones predominantly traded \cite{kemna1990pricing}. No analytic pricing formula 
+for arithmetic Asian options exists however, and consequently numerical methods are required
+to estimate their prices.
+In this report, we investigate and compare two widely used numerical approaches for pricing
+arithmetic Asian options: a Monte Carlo method and a finite difference method. The evaluation
+will focus on computational cost, convergence behavior, and accuracy of these techniques. 
+Specifically, for the Monte Carlo simulations, we incorporate variance reduction strategies—antithetic 
+variates and control variates—as described in \cite{hull2016options} and \cite{kemna1990pricing} respectively. 
+For the finite difference method, we employ a PDE-based approach, solving a transformed version of 
+the Black-Scholes PDE using the finite difference scheme introduced by Večer \cite{vecer2001new}.
+
+The report is structured as follows. Section \ref{sec:preliminaries} introduces Asian options and 
+provides the relevant background on option pricing through Monte Carlo simulation and PDE techniques. 
+In Section \ref{sec:MC_pricing}, we detail the Monte Carlo and various Variance Reduction methods implemented. Section \ref{sec:FD_pricing}
+describes the finite difference scheme adopted. Finally, Section \ref{sec:comparison} presents a comparative analysis of the numerical results
+obtained from these two methods.
+

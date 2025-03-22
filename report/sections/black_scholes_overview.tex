@@ -1,0 +1,46 @@
+The Black-Scholes model provides a foundational framework for pricing derivative securities, 
+including options, under specific market assumptions. These assumptions include frictionless markets 
+(no transaction costs or taxes), continuous trading, unlimited short selling, absence of arbitrage, constant volatility, a known
+ and constant risk-free interest rate, and the underlying asset price following a geometric Brownian motion. 
+ Under these conditions, Black and Scholes \cite{black1973pricing} showed that the price $V(S, t)$ of any derivative 
+ dependent on the underlying asset price $S$ must satisfy the Black-Scholes partial differential equation (PDE):
+
+\begin{equation}\label{eq:black_scholes_pde}
+\frac{\partial V}{\partial t} + \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} + rS\frac{\partial V}{\partial S} - rV = 0,
+\end{equation}
+
+where $\sigma$ is the volatility of the underlying asset, $r$ is the risk-free interest rate, and 
+$t$ denotes time. This PDE is central to option pricing theory, as solving it—subject to appropriate boundary and
+terminal conditions specific to the derivative—enables the determination of the derivative's price at any time prior to maturity.
+
+An alternative but equivalent framework for derivative pricing is the risk-neutral valuation approach. Under this approach, 
+the price of a derivative is calculated as the expected discounted payoff under a risk-neutral probability measure 
+$\mathbb{Q}$, which effectively eliminates the necessity of incorporating investor risk preferences explicitly. 
+Specifically, the value $V(S,t)$ at time $t$ is given by:
+
+\begin{equation}\label{eq:risk_neutral_valuation}
+    V(S,t) = e^{-r(T - t)} \mathbb{E}^{\mathbb{Q}}[P(S_T) \mid S_t = S],
+\end{equation}
+
+where $P(S_T)$ represents the payoff of the derivative at maturity $T$, and $\mathbb{E}^{\mathbb{Q}}$ denotes the
+expectation under the risk-neutral measure. Under the risk-neutral measure the expected return of the
+underlying asset is equal to the risk-free rate $r$.
+
+Importantly, pricing a derivative using this risk-neutral expectation is mathematically equivalent to solving the Black-Scholes 
+PDE in equation \eqref{eq:black_scholes_pde}. Both methods yield the same theoretical price under the assumptions of the 
+Black-Scholes framework \cite{hull2016options}.
+
+In practice, the risk-neutral valuation approach lends itself naturally to numerical techniques such as Monte Carlo simulation. 
+In Monte Carlo pricing, we simulate multiple paths of the underlying asset's price evolution under the risk-neutral measure, 
+calculate the derivative payoff for each simulated path at maturity, and then take the discounted average of these payoffs to 
+approximate the derivative's price. This method is especially beneficial when dealing with complex derivative 
+payoffs that do not admit closed-form solutions or are challenging to handle analytically.
+
+Thus, we have two viable numerical approaches to pricing Asian options under the Black-Scholes assumptions:
+\begin{enumerate}
+\item Employing Monte Carlo simulation within the risk-neutral valuation framework.
+\item Solving the corresponding Black-Scholes PDE numerically via finite-difference methods.
+\end{enumerate}
+
+We will introduce and compare specific approaches to pricing arithmetic Asian options that utilise each of these approaches
+in the subsequent sections.

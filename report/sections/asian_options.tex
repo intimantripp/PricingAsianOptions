@@ -1,0 +1,53 @@
+The key characteristic of Asian (or average price) options is that their payoff depends on the average price of the underlying
+asset during the lifetime of the option \cite{hull2016options}. The payoffs $P(S, K)$, where $K$ is the strike and $S$ the asset value,
+of an average price call and average price put are given respectively by:
+
+\begin{subequations}\label{eq:asian_payoffs}
+    \begin{align}
+        &\text{Average price call: } P(S, K) = \max(0, \bar{S} - K) \label{eq:asian_call_payoff}\\
+        &\text{Average price put: }  P(S, K) = \max(0, K - \bar{S}) \label{eq:asian_put_payoff}
+    \end{align}
+\end{subequations}
+
+where $\bar{S}$ denotes the average asset price. The appeal for such options is that this averaging mechanism makes them less 
+suspectible to price movements in the underlying as the option approaches maturity. 
+This makes them less susceptible to price manipulation of the 
+underlying asset \cite{kemna1990pricing}, something that was a concern when they were first written by 
+Banker's Trust Tokyo office as contracts on crude oil contracts \cite{falloon1999evolution}. Asian options are now popular in currency markets,
+where many accounting standards require translation of assets or liabilities priced in foreign currencies at an average rate 
+over the reporting period. Consequently, Asian options can hedge against against book valuation changes due to FX movements,
+and they continue to be common in volatile commodity markets.
+
+There are variations on the Asian options described by equations \eqref{eq:asian_payoffs}. Average strike options use the average 
+asset price over the option's lifetime as the strike price, and the payoff depends on the difference between this average strike and 
+the underlying asset's terminal value. We do not consider average strike options here. Additionally, Asian options can differ based
+on their exercise times. European Asian options have a single exercise opportunity at maturity, while American Asian options allow
+exercise at any point before maturity. In this report, we focus exclusively on European Asian options. 
+
+The averaging method commonly employed is the arithmetic average. In the continuous monitoring case, this is:
+
+\begin{equation}\label{eq:continuous_arithmethic_average}
+    \bar{S} = \frac{1}{T-T_0} \int_{T_0}^{T}S(t)dt
+\end{equation}
+
+where $T$ is the maturity of the option and $T_0$ its issuance time. Without loss of generality we assume $T_0 = 0$ throughout.
+For discrete monitoring, where the asset price is measured $n$ times at intervals $t_i$ defined by $t_i = i \frac{T}{n}$ with $t_0 = 0$, 
+the arithmetic average becomes:
+
+\begin{equation}\label{eq:discrete_arithmethic_average}
+    \bar{S} = \frac{1}{n} \sum_{i=1}^{n}S(t_i).
+\end{equation}
+
+This could correspond to daily measurements of the asset's closing price, for instance.
+Finally, the alternative averaging method is the geometric average. In the continuous case, this is given by:
+
+\begin{equation}
+    \bar{S} = e^{\frac{1}{T}\int_{0}^{T}\ln(S(t))dt}
+\end{equation}
+ 
+
+Although geometric averaging is less commonly used, it remaisn valuable to consider since a closed form solution for 
+Asian options with geometric averaging can be obtained under the Black-Scholes framework \cite{kemna1990pricing}.
+This closed form solution will be leveraged in two ways in this report. Firstly, we will employ it in verifying that 
+our Monte Carlo valuations are accurate and Secondly, it will be utilised in a variance reduction technique for the Monte Carlo
+approach, both detailed in section \ref{sec:MC_pricing}. 
